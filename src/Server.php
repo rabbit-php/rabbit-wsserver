@@ -85,6 +85,19 @@ class Server extends \rabbit\server\Server
     }
 
     /**
+     * @param \Swoole\WebSocket\Server $request
+     * @param \Swoole\Http\Response $response
+     * @return bool
+     */
+    public function onHandShake(\Swoole\WebSocket\Server $request, \Swoole\Http\Response $response): bool
+    {
+        if ($this->handShake->checkHandshake($request, $response)) {
+            return $this->handShake->okHandshake($request, $response);
+        }
+        return false;
+    }
+
+    /**
      * @param \Swoole\Server $server
      * @param int $fd
      * @param int $from_id

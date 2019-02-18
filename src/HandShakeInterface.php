@@ -14,5 +14,7 @@ namespace rabbit\wsserver;
  */
 interface HandShakeInterface
 {
+    public function checkHandshake(\swoole_http_request $request, \swoole_http_response $response): bool;
+
     public function okHandshake(\swoole_http_request $request, \swoole_http_response $response): bool;
 }
