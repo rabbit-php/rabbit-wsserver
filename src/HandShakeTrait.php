@@ -16,6 +16,17 @@ trait HandShakeTrait
      * @param \swoole_http_response $response
      * @return bool
      */
+    public function handShake(\swoole_http_request $request, \swoole_http_response $response): bool{
+        if ($this->checkHandshake($request, $response)) {
+            return $this->okHandshake($request, $response);
+        }
+        return false;
+    }
+    /**
+     * @param \swoole_http_request $request
+     * @param \swoole_http_response $response
+     * @return bool
+     */
     public function okHandshake(\swoole_http_request $request, \swoole_http_response $response): bool
     {
         // websocket握手连接算法验证
