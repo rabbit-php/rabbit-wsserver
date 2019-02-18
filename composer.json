@@ -1,0 +1,25 @@
+{
+  "name": "rabbit/wsserver",
+  "description": "rabbit websocket server",
+  "type": "library",
+  "require": {
+    "rabbit/framework": "dev-master",
+    "rabbit/httpserver": "dev-master",
+    "symfony/console": "^4.1"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "albert",
+      "email": "63851587@qq.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "rabbit\\wsserver\\": "src/"
+    },
+    "files": [
+      "src/functions.php"
+    ]
+  }
+}
