@@ -16,12 +16,14 @@ trait HandShakeTrait
      * @param \swoole_http_response $response
      * @return bool
      */
-    public function handShake(\swoole_http_request $request, \swoole_http_response $response): bool{
+    public function handShake(\swoole_http_request $request, \swoole_http_response $response): bool
+    {
         if ($this->checkHandshake($request, $response)) {
             return $this->okHandshake($request, $response);
         }
         return false;
     }
+
     /**
      * @param \swoole_http_request $request
      * @param \swoole_http_response $response
@@ -36,7 +38,7 @@ trait HandShakeTrait
             $response->end();
             return false;
         }
-        echo $request->header['sec-websocket-key'];
+
         $key = base64_encode(sha1(
             $request->header['sec-websocket-key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11',
             true
@@ -61,5 +63,6 @@ trait HandShakeTrait
 
         $response->status(101);
         $response->end();
+        return true;
     }
 }

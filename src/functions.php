@@ -27,19 +27,4 @@ if (!function_exists('getClientList')) {
         }
         return $fdList;
     }
-
-    /**
-     * @param $data
-     * @param \Psr\Http\Message\ResponseInterface $response
-     * @return string
-     */
-    function makeWsMessage($data): string
-    {
-        if (!(is_array($data) || $data instanceof \rabbit\contract\Arrayable) || !is_object($data)) {
-            $data = ['data' => $data];
-        }
-        $data = \rabbit\helper\ArrayHelper::toArray($data);
-        $content = \rabbit\helper\JsonHelper::encode($data, JSON_UNESCAPED_UNICODE);
-        return $content;
-    }
 }

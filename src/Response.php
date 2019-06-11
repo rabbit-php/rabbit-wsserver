@@ -10,7 +10,6 @@ namespace rabbit\wsserver;
 
 
 use Psr\Http\Message\ResponseInterface;
-use rabbit\contract\Arrayable;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
 use rabbit\helper\CoroHelper;
@@ -142,15 +141,6 @@ class Response implements ResponseInterface
         CoroHelper::go(function () {
             $this->server->isEstablished($this->fd) && $this->server->push($this->fd, $this->stream);
         });
-    }
-
-    /**
-     * @param $value
-     * @return bool
-     */
-    public function isArrayable($value): bool
-    {
-        return is_array($value) || $value instanceof Arrayable;
     }
 
     /**

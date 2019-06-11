@@ -42,6 +42,11 @@ class Server extends \rabbit\server\Server
     private $handShake = null;
     /** @var ServerRequestInterface[] */
     private $requestList = [];
+    /** @var CloseHandlerInterface */
+    private $closeHandler = CloseHandler::class;
+
+    /** @var callable */
+    private $errorResponse;
 
     /**
      * @param \Swoole\Http\Request $request
@@ -61,18 +66,21 @@ class Server extends \rabbit\server\Server
      */
     public function onMessage(\Swoole\WebSocket\Server $server, \Swoole\Websocket\Frame $frame): void
     {
-        if ($frame instanceof CloseFrame) {
+        if ($frame->opcode === 0x08) {
+            if (is_string($this->closeHandler)) {
+                $this->closeHandler = getDI($this->closeHandler);
+            }
             unset($this->requestList[$frame->fd]);
-            App::warning(sprintf("The fd=%d is closed.code=%s reason=%s!", $frame->fd, $frame->code, $frame->reason));
-            return;
-        }
-        $psrRequest = $this->wsRequest;
-        $psrResponse = $this->wsResponse;
+            $this->closeHandler->handle($server, $frame);
+        } else {
+            $psrRequest = $this->wsRequest;
+            $psrResponse = $this->wsResponse;
 
-        $data = JsonHelper::decode($frame->data, true);
-        $this->dispatcher->dispatch(new $psrRequest($data, $frame->fd,
-            ArrayHelper::getValue($this->requestList, $frame->fd)),
-            new $psrResponse($server, $frame->fd));
+            $data = JsonHelper::decode($frame->data, true);
+            $this->dispatcher->dispatch(new $psrRequest($data, $frame->fd,
+                ArrayHelper::getValue($this->requestList, $frame->fd)),
+                new $psrResponse($server, $frame->fd));
+        }
     }
 
     /**
@@ -89,9 +97,13 @@ class Server extends \rabbit\server\Server
      * @param \Swoole\Http\Response $response
      * @return bool
      */
-    public function onHandShake(\Swoole\WebSocket\Server $request, \Swoole\Http\Response $response): bool
+    public function onHandShake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
-        return $this->handShake($request, $response);
+        if ($this->handShake->handShake($request, $response)) {
+            $this->requestList[$request->fd] = $request;
+            return true;
+        }
+        return false;
     }
 
     /**

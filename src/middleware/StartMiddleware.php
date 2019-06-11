@@ -32,10 +32,7 @@ class StartMiddleware implements MiddlewareInterface
     {
         $response = $handler->handle($request);
         $data = $response->getAttribute(AttributeEnum::RESPONSE_ATTRIBUTE);
-        // Content
-        if (!$response->isArrayable($data) || !is_object($data)) {
-            $data = ['data' => $data];
-        }
+        $data = ['data' => $data];
         $data = ArrayHelper::toArray($data);
         $content = JsonHelper::encode($data, JSON_UNESCAPED_UNICODE);
         $response = $response->withContent($content);
