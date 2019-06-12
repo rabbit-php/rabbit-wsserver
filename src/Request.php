@@ -88,7 +88,7 @@ class Request implements ServerRequestInterface
     public function __construct(array $data, int $fd, \Swoole\Http\Request $swooleRequest = null)
     {
         $query = ArrayHelper::getValue($data, 'query', []);
-        $body = ArrayHelper::getValue($data, 'data', []);
+        $body = ArrayHelper::getValue($data, 'body', []);
         $this->withQueryParams($query)
             ->withParsedBody($body)
             ->withAttribute(AttributeEnum::CONNECT_FD, $fd);
