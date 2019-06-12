@@ -95,7 +95,9 @@ class Server extends \rabbit\server\Server
                         'message' => $throwable->getMessage()
                     ];
                     getDI('debug') && $error['error'] = [
-                        'stack' => $throwable->getTrace()
+                        'file' => $throwable->getFile(),
+                        'line' => $throwable->getLine(),
+                        'stack-trace' => explode(PHP_EOL, $throwable->getTraceAsString())
                     ];
                     $server->isEstablished($frame->fd) && $server->push($frame->fd, JsonHelper::encode($error));
                 }
