@@ -11,6 +11,7 @@ namespace rabbit\wsserver;
 use Psr\Http\Message\ServerRequestInterface;
 use rabbit\App;
 use rabbit\core\SingletonTrait;
+use rabbit\handler\ErrorHandlerInterface;
 use rabbit\helper\ArrayHelper;
 use rabbit\helper\JsonHelper;
 use rabbit\server\Swoole;
@@ -76,10 +77,29 @@ class Server extends \rabbit\server\Server
             $psrRequest = $this->wsRequest;
             $psrResponse = $this->wsResponse;
 
-            $data = JsonHelper::decode($frame->data, true);
-            $this->dispatcher->dispatch(new $psrRequest($data, $frame->fd,
-                ArrayHelper::getValue($this->requestList, $frame->fd)),
-                new $psrResponse($server, $frame->fd));
+            try {
+                $data = JsonHelper::decode($frame->data, true);
+                $this->dispatcher->dispatch(new $psrRequest($data, $frame->fd,
+                    ArrayHelper::getValue($this->requestList, $frame->fd)),
+                    new $psrResponse($server, $frame->fd));
+            } catch (\Throwable $throw) {
+                try {
+                    /**
+                     * @var ErrorHandlerInterface $errorHandler
+                     */
+                    $errorHandler = getDI('errorHandler');
+                    $errorHandler->handle($throw)->send();
+                } catch (\Throwable $throwable) {
+                    $error = [
+                        'code' => $throwable->getCode(),
+                        'message' => $throwable->getMessage()
+                    ];
+                    getDI('debug') && $error['error'] = [
+                        'stack' => $throwable->getTrace()
+                    ];
+                    $server->isEstablished($frame->fd) && $server->push($frame->fd, JsonHelper::encode($error));
+                }
+            }
         }
     }
 
