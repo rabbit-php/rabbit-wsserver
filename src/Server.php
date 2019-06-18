@@ -159,7 +159,7 @@ class Server extends \rabbit\server\Server
             $server->on('request', [$this, 'onRequest']);
         }
         $server->on('message', [$this, 'onMessage']);
-        $server->on('close', [$this, 'onClose']);
+//        $server->on('close', [$this, 'onClose']);
         if ($this->handShake) {
             $server->on('handshake', [$this, 'onHandshake']);
         } else {
