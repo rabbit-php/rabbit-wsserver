@@ -14,11 +14,7 @@ use rabbit\core\SingletonTrait;
 use rabbit\handler\ErrorHandlerInterface;
 use rabbit\helper\ArrayHelper;
 use rabbit\helper\JsonHelper;
-use rabbit\server\Swoole;
-use rabbit\server\swoole_websocket_frame;
-use rabbit\server\swoole_websocket_server;
 use Swoole\WebSocket\CloseFrame;
-use swoole_http_server;
 
 /**
  * Class Server

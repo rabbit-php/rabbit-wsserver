@@ -12,11 +12,11 @@ namespace rabbit\wsserver;
 trait HandShakeTrait
 {
     /**
-     * @param \swoole_http_request $request
-     * @param \swoole_http_response $response
+     * @param \Swoole\Http\Request $request
+     * @param \Swoole\Http\Response $response
      * @return bool
      */
-    public function handShake(\swoole_http_request $request, \swoole_http_response $response): bool
+    public function handShake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         if ($this->checkHandshake($request, $response)) {
             return $this->okHandshake($request, $response);
@@ -25,11 +25,11 @@ trait HandShakeTrait
     }
 
     /**
-     * @param \swoole_http_request $request
-     * @param \swoole_http_response $response
+     * @param \Swoole\Http\Request $request
+     * @param \Swoole\Http\Response $response
      * @return bool
      */
-    public function okHandshake(\swoole_http_request $request, \swoole_http_response $response): bool
+    public function okHandshake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         // websocket握手连接算法验证
         $secWebSocketKey = $request->header['sec-websocket-key'];

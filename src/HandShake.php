@@ -12,11 +12,11 @@ class HandShake implements HandShakeInterface
     use HandShakeTrait;
 
     /**
-     * @param \swoole_http_request $request
-     * @param \swoole_http_response $response
+     * @param \Swoole\Http\Request $request
+     * @param Swoole\Http\Response $response
      * @return bool
      */
-    public function checkHandshake(\swoole_http_request $request, \swoole_http_response $response): bool
+    public function checkHandshake(\Swoole\Http\Request $request, Swoole\Http\Response $response): bool
     {
         return true;
     }
