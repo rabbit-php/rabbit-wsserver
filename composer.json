@@ -4,8 +4,7 @@
   "type": "library",
   "require": {
     "rabbit/framework": "dev-master",
-    "rabbit/httpserver": "dev-master",
-    "symfony/console": "^4.1"
+    "rabbit/httpserver": "dev-master"
   },
   "license": "MIT",
   "authors": [
