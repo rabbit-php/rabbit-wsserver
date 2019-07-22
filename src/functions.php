@@ -14,6 +14,9 @@ if (!function_exists('getClientList')) {
     {
         $start_fd = 0;
         $server = \rabbit\App::getServer();
+        if (empty($server)) {
+            return [];
+        }
         $fdList = [];
         while (true) {
             $conn_list = $server->getClientList($start_fd, 10);
