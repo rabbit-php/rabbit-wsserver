@@ -25,25 +25,25 @@ class Server extends \rabbit\server\Server
     /**
      * @var string
      */
-    private $request;
+    protected $request;
     /**
      * @var string
      */
-    private $response;
+    protected $response;
 
     /** @var string */
-    private $wsRequest = Request::class;
+    protected $wsRequest = Request::class;
     /** @var string */
-    private $wsResponse = Response::class;
+    protected $wsResponse = Response::class;
     /** @var HandShakeInterface|null */
-    private $handShake = null;
+    protected $handShake = null;
     /** @var ServerRequestInterface[] */
-    private $requestList = [];
+    protected $requestList = [];
     /** @var CloseHandlerInterface */
-    private $closeHandler = CloseHandler::class;
+    protected $closeHandler = CloseHandler::class;
 
     /** @var callable */
-    private $errorResponse;
+    protected $errorResponse;
 
     /**
      * @param \Swoole\Http\Request $request
