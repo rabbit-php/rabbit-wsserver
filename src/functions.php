@@ -13,20 +13,13 @@ if (!function_exists('getClientList')) {
     function getClientList(): array
     {
         $start_fd = 0;
-        $server = \rabbit\App::getServer();
+        $server = \rabbit\App::getServer()->getSwooleServer();
         if (empty($server)) {
             return [];
         }
         $fdList = [];
-        while (true) {
-            $conn_list = $server->getClientList($start_fd, 10);
-            if ($conn_list === false or count($conn_list) === 0) {
-                break;
-            }
-            $start_fd = end($conn_list);
-            foreach ($conn_list as $fd) {
-                $fdList[] = $fd;
-            }
+        foreach ($server->connections as $fd) {
+            $fdList[] = $fd;
         }
         return $fdList;
     }

@@ -14,7 +14,7 @@ use rabbit\core\SingletonTrait;
 use rabbit\handler\ErrorHandlerInterface;
 use rabbit\helper\ArrayHelper;
 use rabbit\helper\JsonHelper;
-use Swoole\WebSocket\CloseFrame;
+use rabbit\memory\table\Table;
 
 /**
  * Class Server
@@ -44,6 +44,30 @@ class Server extends \rabbit\server\Server
 
     /** @var callable */
     protected $errorResponse;
+    /** @var Table */
+    protected $table;
+
+    /**
+     * Server constructor.
+     * @param array $setting
+     * @param array $coSetting
+     * @throws \Exception
+     */
+    public function __construct(array $setting = [], array $coSetting = [])
+    {
+        parent::__construct($setting, $coSetting);
+        $this->table = new Table('websocket', 8192);
+        $this->table->column('path', Table::TYPE_STRING, 100);
+        $this->table->create();
+    }
+
+    /**
+     * @return Table
+     */
+    public function getTable(): Table
+    {
+        return $this->table;
+    }
 
     /**
      * @param \Swoole\Http\Request $request
@@ -67,7 +91,7 @@ class Server extends \rabbit\server\Server
             if (is_string($this->closeHandler)) {
                 $this->closeHandler = getDI($this->closeHandler);
             }
-            unset($this->requestList[$frame->fd]);
+            $this->clearFd($frame->fd);
             $this->closeHandler->handle($server, $frame);
         } else {
             $psrRequest = $this->wsRequest;
@@ -107,7 +131,7 @@ class Server extends \rabbit\server\Server
      */
     public function onOpen(\Swoole\WebSocket\Server $server, \Swoole\Http\Request $request): void
     {
-        $this->requestList[$request->fd] = $request;
+        $this->saveFd($request);
     }
 
     /**
@@ -118,7 +142,7 @@ class Server extends \rabbit\server\Server
     public function onHandShake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         if ($this->handShake->handShake($request, $response)) {
-            $this->requestList[$request->fd] = $request;
+            $this->saveFd($request);
             return true;
         }
         return false;
@@ -132,7 +156,7 @@ class Server extends \rabbit\server\Server
      */
     public function onClose(\Swoole\Server $server, int $fd, int $from_id): void
     {
-        unset($this->requestList[$fd]);
+        $this->clearFd($fd);
         $closer = $from_id < 0 ? 'server' : 'customer';
         App::warning(sprintf("The fd=%d is closed by %s!", $fd, $closer));
     }
@@ -164,5 +188,25 @@ class Server extends \rabbit\server\Server
         $server->start();
     }
 
+    /**
+     * @param \Swoole\Http\Request $request
+     */
+    private function saveFd(\Swoole\Http\Request $request): void
+    {
+        $this->requestList[$request->fd] = $request;
+        $path = '';
+        if (isset($request->server['request_uri'])) {
+            [$path] = explode('?', $request->server['request_uri']);
+        }
+        $this->table->set($request->fd, ['path' => $path]);
+    }
 
+    /**
+     * @param int $fd
+     */
+    public function clearFd(int $fd): void
+    {
+        unset($this->requestList[$fd]);
+        $this->table->del($fd);
+    }
 }
