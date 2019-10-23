@@ -99,9 +99,14 @@ class Server extends \rabbit\server\Server
 
             try {
                 $data = JsonHelper::decode($frame->data, true);
-                $this->dispatcher->dispatch(new $psrRequest($data, $frame->fd,
-                    ArrayHelper::getValue($this->requestList, $frame->fd)),
-                    new $psrResponse($server, $frame->fd));
+                $this->dispatcher->dispatch(
+                    new $psrRequest(
+                    $data,
+                    $frame->fd,
+                    ArrayHelper::getValue($this->requestList, $frame->fd)
+                ),
+                    new $psrResponse($server, $frame->fd)
+                );
             } catch (\Throwable $throw) {
                 try {
                     /**

@@ -20,5 +20,4 @@ class HandShake implements HandShakeInterface
     {
         return true;
     }
-
 }

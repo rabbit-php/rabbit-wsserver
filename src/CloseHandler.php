@@ -20,5 +20,4 @@ class CloseHandler implements CloseHandlerInterface
     {
         App::warning(sprintf("The fd=%d is closed.code=%s reason=%s!", $frame->fd, $frame->code, $frame->reason));
     }
-
 }
