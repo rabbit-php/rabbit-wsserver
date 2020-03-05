@@ -11,7 +11,6 @@ namespace rabbit\wsserver;
 use Psr\Http\Message\ResponseInterface;
 use rabbit\exception\NotSupportedException;
 use rabbit\helper\ArrayHelper;
-use rabbit\helper\CoroHelper;
 use rabbit\web\MessageTrait;
 
 /**
@@ -133,11 +132,11 @@ class Response implements ResponseInterface
     {
         $fdList = ArrayHelper::getValue($this->attributes, static::FD_LIST, []);
         foreach ($fdList as $fd => $message) {
-            CoroHelper::go(function () use ($fd, $message) {
+            rgo(function () use ($fd, $message) {
                 $this->server->isEstablished($fd) && $this->server->push($fd, $message);
             });
         }
-        CoroHelper::go(function () {
+        rgo(function () {
             $this->server->isEstablished($this->fd) && $this->server->push($this->fd, $this->stream);
         });
     }
