@@ -3,8 +3,8 @@
   "description": "rabbit websocket server",
   "type": "library",
   "require": {
-    "rabbit/framework": "dev-master",
-    "rabbit/httpserver": "dev-master"
+    "rabbit/framework": "^1.0",
+    "rabbit/httpserver": "^1.0"
   },
   "license": "MIT",
   "authors": [
