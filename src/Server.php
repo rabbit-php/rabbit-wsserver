@@ -40,9 +40,6 @@ class Server extends \Rabbit\Server\Server
     protected array $requestList = [];
     /** @var CloseHandlerInterface */
     protected $closeHandler = CloseHandler::class;
-
-    /** @var callable */
-    protected $errorResponse;
     /** @var Table */
     protected Table $table;
 
