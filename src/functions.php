@@ -1,10 +1,5 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2019/1/8
- * Time: 15:21
- */
+declare(strict_types=1);
 
 if (!function_exists('getClientList')) {
     /**
@@ -12,8 +7,7 @@ if (!function_exists('getClientList')) {
      */
     function getClientList(): array
     {
-        $start_fd = 0;
-        $server = \rabbit\App::getServer()->getSwooleServer();
+        $server = \Rabbit\Server\ServerHelper::getServer()->getSwooleServer();
         if (empty($server)) {
             return [];
         }

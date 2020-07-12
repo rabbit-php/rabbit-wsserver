@@ -1,57 +1,56 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2018/10/8
- * Time: 19:44
- */
+declare(strict_types=1);
 
-namespace rabbit\wsserver;
+namespace Rabbit\WsServer;
 
+use DI\DependencyException;
+use DI\NotFoundException;
+use Exception;
 use Psr\Http\Message\ServerRequestInterface;
-use rabbit\App;
-use rabbit\core\SingletonTrait;
-use rabbit\handler\ErrorHandlerInterface;
-use rabbit\helper\ArrayHelper;
-use rabbit\helper\JsonHelper;
-use rabbit\memory\table\Table;
+use Rabbit\Base\App;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\Base\Helper\JsonHelper;
+use Rabbit\Base\Table\Table;
+use Rabbit\Web\ErrorHandlerInterface;
+use Swoole\Websocket\Frame;
+use Throwable;
 
 /**
  * Class Server
- * @package rabbit\wsserver
+ * @package Rabbit\WsServer
  */
-class Server extends \rabbit\server\Server
+class Server extends \Rabbit\Server\Server
 {
     /**
      * @var string
      */
-    protected $request;
+    protected string $request = \Rabbit\HttpServer\Request::class;
     /**
      * @var string
      */
-    protected $response;
+    protected string $response = \Rabbit\HttpServer\Response::class;
 
     /** @var string */
-    protected $wsRequest = Request::class;
+    protected string $wsRequest = Request::class;
     /** @var string */
-    protected $wsResponse = Response::class;
+    protected string $wsResponse = Response::class;
     /** @var HandShakeInterface|null */
-    protected $handShake = null;
+    protected ?HandShakeInterface $handShake = null;
     /** @var ServerRequestInterface[] */
-    protected $requestList = [];
+    protected array $requestList = [];
     /** @var CloseHandlerInterface */
     protected $closeHandler = CloseHandler::class;
 
     /** @var callable */
     protected $errorResponse;
     /** @var Table */
-    protected $table;
+    protected Table $table;
 
     /**
      * Server constructor.
      * @param array $setting
      * @param array $coSetting
-     * @throws \Exception
+     * @throws Exception
      */
     public function __construct(array $setting = [], array $coSetting = [])
     {
@@ -75,17 +74,17 @@ class Server extends \rabbit\server\Server
      */
     public function onRequest(\Swoole\Http\Request $request, \Swoole\Http\Response $response): void
     {
-        $psrRequest = $this->request['class'];
-        $psrResponse = $this->response['class'];
+        $psrRequest = $this->request;
+        $psrResponse = $this->response;
         $this->dispatcher->dispatch(new $psrRequest($request), new $psrResponse($response));
     }
 
     /**
      * @param \Swoole\WebSocket\Server $server
-     * @param \Swoole\Websocket\Frame $frame
-     * @throws \Exception
+     * @param Frame $frame
+     * @throws Throwable
      */
-    public function onMessage(\Swoole\WebSocket\Server $server, \Swoole\Websocket\Frame $frame): void
+    public function onMessage(\Swoole\WebSocket\Server $server, Frame $frame): void
     {
         if ($frame->opcode === 0x08) {
             if (is_string($this->closeHandler)) {
@@ -101,20 +100,20 @@ class Server extends \rabbit\server\Server
                 $data = JsonHelper::decode($frame->data, true);
                 $this->dispatcher->dispatch(
                     new $psrRequest(
-                    $data,
-                    $frame->fd,
-                    ArrayHelper::getValue($this->requestList, $frame->fd)
-                ),
+                        $data,
+                        $frame->fd,
+                        ArrayHelper::getValue($this->requestList, $frame->fd)
+                    ),
                     new $psrResponse($server, $frame->fd)
                 );
-            } catch (\Throwable $throw) {
+            } catch (Throwable $throw) {
                 try {
                     /**
                      * @var ErrorHandlerInterface $errorHandler
                      */
                     $errorHandler = getDI('errorHandler');
                     $errorHandler->handle($throw)->send();
-                } catch (\Throwable $throwable) {
+                } catch (Throwable $throwable) {
                     $error = [
                         'code' => $throwable->getCode(),
                         'message' => $throwable->getMessage()
@@ -140,7 +139,7 @@ class Server extends \rabbit\server\Server
     }
 
     /**
-     * @param \Swoole\WebSocket\Server $request
+     * @param \Swoole\Http\Request $request
      * @param \Swoole\Http\Response $response
      * @return bool
      */
@@ -157,7 +156,7 @@ class Server extends \rabbit\server\Server
      * @param \Swoole\Server $server
      * @param int $fd
      * @param int $from_id
-     * @throws \Exception
+     * @throws Throwable
      */
     public function onClose(\Swoole\Server $server, int $fd, int $from_id): void
     {
@@ -175,7 +174,9 @@ class Server extends \rabbit\server\Server
     }
 
     /**
-     * @throws \Exception
+     * @param \Swoole\Server|null $server
+     * @throws DependencyException
+     * @throws NotFoundException
      */
     protected function startServer(\Swoole\Server $server = null): void
     {
@@ -184,7 +185,6 @@ class Server extends \rabbit\server\Server
             $server->on('request', [$this, 'onRequest']);
         }
         $server->on('message', [$this, 'onMessage']);
-//        $server->on('close', [$this, 'onClose']);
         if ($this->handShake) {
             $server->on('handshake', [$this, 'onHandshake']);
         } else {
@@ -203,7 +203,7 @@ class Server extends \rabbit\server\Server
         if (isset($request->server['request_uri'])) {
             [$path] = explode('?', $request->server['request_uri']);
         }
-        $this->table->set($request->fd, ['path' => $path]);
+        $this->table->set((string)$request->fd, ['path' => $path]);
     }
 
     /**
@@ -212,6 +212,6 @@ class Server extends \rabbit\server\Server
     public function clearFd(int $fd): void
     {
         unset($this->requestList[$fd]);
-        $this->table->del($fd);
+        $this->table->del((string)$fd);
     }
 }

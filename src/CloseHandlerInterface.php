@@ -1,17 +1,19 @@
 <?php
+declare(strict_types=1);
 
+namespace Rabbit\WsServer;
 
-namespace rabbit\wsserver;
+use Swoole\Websocket\Frame;
 
 /**
  * Interface CloseHandlerInterface
- * @package rabbit\wsserver
+ * @package Rabbit\WsServer
  */
 interface CloseHandlerInterface
 {
     /**
      * @param \Swoole\WebSocket\Server $server
-     * @param \Swoole\Websocket\Frame $frame
+     * @param Frame $frame
      */
-    public function handle(\Swoole\WebSocket\Server $server, \Swoole\Websocket\Frame $frame): void;
+    public function handle(\Swoole\WebSocket\Server $server, Frame $frame): void;
 }

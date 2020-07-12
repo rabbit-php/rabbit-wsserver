@@ -1,21 +1,16 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2018/10/20
- * Time: 22:48
- */
+declare(strict_types=1);
 
-namespace rabbit\wsserver;
+namespace Rabbit\WsServer;
 
 use Psr\Http\Message\ResponseInterface;
-use rabbit\exception\NotSupportedException;
-use rabbit\helper\ArrayHelper;
-use rabbit\web\MessageTrait;
+use Rabbit\Base\Exception\NotSupportedException;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\Web\MessageTrait;
 
 /**
  * Class Response
- * @package rabbit\wsserver
+ * @package Rabbit\WsServer
  */
 class Response implements ResponseInterface
 {
@@ -25,23 +20,23 @@ class Response implements ResponseInterface
     /**
      * @var array
      */
-    private $attributes = [];
+    private array $attributes = [];
     /**
      * @var int
      */
-    private $fd;
+    private int $fd;
     /**
      * @var \Swoole\Server
      */
-    private $server;
+    private \Swoole\Server $server;
     /**
      * @var int
      */
-    private $statusCode = 200;
+    private int $statusCode = 200;
     /**
      * @var string
      */
-    private $charset = 'utf-8';
+    private string $charset = 'utf-8';
 
     /**
      * Response constructor.
@@ -125,9 +120,6 @@ class Response implements ResponseInterface
         return $this;
     }
 
-    /**
-     *
-     */
     public function send(): void
     {
         $fdList = ArrayHelper::getValue($this->attributes, static::FD_LIST, []);

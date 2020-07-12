@@ -1,11 +1,11 @@
 <?php
+declare(strict_types=1);
 
-
-namespace rabbit\wsserver;
+namespace Rabbit\WsServer;
 
 /**
  * Class HandShake
- * @package rabbit\wsserver
+ * @package Rabbit\WsServer
  */
 class HandShake implements HandShakeInterface
 {
@@ -13,10 +13,10 @@ class HandShake implements HandShakeInterface
 
     /**
      * @param \Swoole\Http\Request $request
-     * @param Swoole\Http\Response $response
+     * @param \Swoole\Http\Response $response
      * @return bool
      */
-    public function checkHandshake(\Swoole\Http\Request $request, Swoole\Http\Response $response): bool
+    public function checkHandshake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         return true;
     }

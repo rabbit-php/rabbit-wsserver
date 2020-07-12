@@ -1,88 +1,80 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Administrator
- * Date: 2018/10/20
- * Time: 20:06
- */
+declare(strict_types=1);
 
-namespace rabbit\wsserver;
+namespace Rabbit\WsServer;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
-use rabbit\helper\ArrayHelper;
-use rabbit\server\AttributeEnum;
-use rabbit\web\MessageTrait;
-use rabbit\web\Uri;
+use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\Web\AttributeEnum;
+use Rabbit\Web\MessageTrait;
+use Rabbit\Web\Uri;
 
 /**
  * Class Request
- * @package rabbit\wsserver
+ * @package Rabbit\WsServer
  */
 class Request implements ServerRequestInterface
 {
     use MessageTrait;
+
     /**
      * @var \Swoole\Http\Request
      */
-    protected $swooleRequest;
+    protected ?\Swoole\Http\Request $swooleRequest = null;
 
     /**
      * @var array
      */
-    private $attributes = [];
+    private array $attributes = [];
 
     /**
      * @var array
      */
-    private $cookieParams = [];
+    private array $cookieParams = [];
 
     /**
      * @var null|array|object
      */
-    private $parsedBody;
+    private ?array $parsedBody = null;
 
-    /**
-     * the body of parser
-     *
-     * @var mixed
-     */
-    private $bodyParams;
+    private ?array $bodyParams = null;
 
     /**
      * @var array
      */
-    private $queryParams = [];
+    private array $queryParams = [];
 
     /**
      * @var array
      */
-    private $serverParams = [];
+    private array $serverParams = [];
 
     /**
      * @var array
      */
-    private $uploadedFiles = [];
+    private array $uploadedFiles = [];
 
     /**
      * @var string
      */
-    private $method;
+    private string $method = 'GET';
 
     /**
-     * @var UriInterface|Uri
+     * @var UriInterface
      */
-    private $uri;
+    private UriInterface $uri;
 
     /**
      * @var string
      */
-    private $requestTarget;
+    private ?string $requestTarget = null;
 
     /**
      * Request constructor.
      * @param array $data
      * @param int $fd
+     * @param \Swoole\Http\Request|null $swooleRequest
      */
     public function __construct(array $data, int $fd, \Swoole\Http\Request $swooleRequest = null)
     {

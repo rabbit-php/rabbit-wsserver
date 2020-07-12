@@ -1,17 +1,17 @@
 <?php
+declare(strict_types=1);
 
-
-namespace rabbit\wsserver;
+namespace Rabbit\WsServer;
 
 /**
  * Interface HandShakeRouteInterface
- * @package rabbit\wsserver
+ * @package Rabbit\WsServer
  */
 interface HandShakeRouteInterface
 {
     /**
-     * @param \rabbit\httpserver\Request $request
+     * @param \Rabbit\HttpServer\Request $request
      * @return bool
      */
-    public function check(\rabbit\httpserver\Request $request):bool ;
+    public function check(\Rabbit\HttpServer\Request $request):bool ;
 }
