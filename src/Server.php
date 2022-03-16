@@ -1,54 +1,29 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Rabbit\WsServer;
 
-use DI\DependencyException;
-use DI\NotFoundException;
-use Exception;
-use Psr\Http\Message\ServerRequestInterface;
 use Rabbit\Base\App;
 use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Table\Table;
-use Rabbit\Web\ErrorHandlerInterface;
+use Rabbit\HttpServer\Request;
+use Rabbit\HttpServer\Response;
+use Rabbit\Web\RequestContext;
+use Rabbit\Web\ResponseContext;
+use Rabbit\WsServer\Request as WsServerRequest;
+use Rabbit\WsServer\Response as WsServerResponse;
 use Swoole\Websocket\Frame;
 use Throwable;
 
-/**
- * Class Server
- * @package Rabbit\WsServer
- */
 class Server extends \Rabbit\Server\Server
 {
-    /**
-     * @var string
-     */
-    protected string $request = \Rabbit\HttpServer\Request::class;
-    /**
-     * @var string
-     */
-    protected string $response = \Rabbit\HttpServer\Response::class;
-
-    /** @var string */
-    protected string $wsRequest = Request::class;
-    /** @var string */
-    protected string $wsResponse = Response::class;
-    /** @var HandShakeInterface|null */
     protected ?HandShakeInterface $handShake = null;
-    /** @var ServerRequestInterface[] */
     protected array $requestList = [];
-    /** @var CloseHandlerInterface */
-    protected $closeHandler = CloseHandler::class;
-    /** @var Table */
+    protected string|CloseHandler $closeHandler = CloseHandler::class;
     protected Table $table;
 
-    /**
-     * Server constructor.
-     * @param array $setting
-     * @param array $coSetting
-     * @throws Exception
-     */
     public function __construct(array $setting = [], array $coSetting = [])
     {
         parent::__construct($setting, $coSetting);
@@ -65,27 +40,30 @@ class Server extends \Rabbit\Server\Server
         return $this->table;
     }
 
-    /**
-     * @param \Swoole\Http\Request $request
-     * @param \Swoole\Http\Response $response
-     */
     public function onRequest(\Swoole\Http\Request $request, \Swoole\Http\Response $response): void
     {
-        $psrRequest = $this->request;
-        $psrResponse = $this->response;
-        $this->dispatcher->dispatch(new $psrRequest($request), new $psrResponse($response));
+        try {
+            $psrRequest = new Request($request);
+            $psrResponse = new Response();
+            RequestContext::set($psrRequest);
+            ResponseContext::set($psrResponse);
+            $this->dispatcher->dispatch($psrRequest)->setSwooleResponse($response)->send();
+        } catch (Throwable $throw) {
+            $errorResponse = service('errorResponse', false);
+            if ($errorResponse === null) {
+                $response->status(500);
+                $response->end("An internal server error occurred.");
+            } else {
+                $response->end($errorResponse->handle($throw, $response));
+            }
+        }
     }
 
-    /**
-     * @param \Swoole\WebSocket\Server $server
-     * @param Frame $frame
-     * @throws Throwable
-     */
     public function onMessage(\Swoole\WebSocket\Server $server, Frame $frame): void
     {
         if ($frame->opcode === 0x08) {
             if (is_string($this->closeHandler)) {
-                $this->closeHandler = getDI($this->closeHandler);
+                $this->closeHandler = service($this->closeHandler);
             }
             $this->clearFd($frame->fd);
             $this->closeHandler->handle($server, $frame);
@@ -95,27 +73,22 @@ class Server extends \Rabbit\Server\Server
 
             try {
                 $data = JsonHelper::decode($frame->data, true);
-                $this->dispatcher->dispatch(
-                    new $psrRequest(
-                        $data,
-                        $frame->fd,
-                        ArrayHelper::getValue($this->requestList, $frame->fd)
-                    ),
-                    new $psrResponse($server, $frame->fd)
-                );
+                $psrRequest = new WsServerRequest($data, $frame->fd, ArrayHelper::getValue($this->requestList, (string)$frame->fd));
+                $psrResponse = new WsServerResponse($server, $frame->fd);
+                RequestContext::set($psrRequest);
+                ResponseContext::set($psrResponse);
+                $this->dispatcher->dispatch($psrRequest)->send();
             } catch (Throwable $throw) {
                 try {
-                    /**
-                     * @var ErrorHandlerInterface $errorHandler
-                     */
-                    $errorHandler = getDI('errorHandler');
-                    $errorHandler->handle($throw)->send();
+                    $errorHandler = service('errorHandler');
+                    $errorHandler->handle($throw, $psrResponse);
+                    $psrResponse->send();
                 } catch (Throwable $throwable) {
                     $error = [
                         'code' => $throwable->getCode(),
                         'message' => $throwable->getMessage()
                     ];
-                    getDI('debug') && $error['error'] = [
+                    config('debug') && $error['error'] = [
                         'file' => $throwable->getFile(),
                         'line' => $throwable->getLine(),
                         'stack-trace' => explode(PHP_EOL, $throwable->getTraceAsString())
@@ -126,20 +99,11 @@ class Server extends \Rabbit\Server\Server
         }
     }
 
-    /**
-     * @param \Swoole\WebSocket\Server $server
-     * @param \Swoole\Http\Request $request
-     */
     public function onOpen(\Swoole\WebSocket\Server $server, \Swoole\Http\Request $request): void
     {
         $this->saveFd($request);
     }
 
-    /**
-     * @param \Swoole\Http\Request $request
-     * @param \Swoole\Http\Response $response
-     * @return bool
-     */
     public function onHandShake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         if ($this->handShake->handShake($request, $response)) {
@@ -149,12 +113,6 @@ class Server extends \Rabbit\Server\Server
         return false;
     }
 
-    /**
-     * @param \Swoole\Server $server
-     * @param int $fd
-     * @param int $from_id
-     * @throws Throwable
-     */
     public function onClose(\Swoole\Server $server, int $fd, int $from_id): void
     {
         $this->clearFd($fd);
@@ -162,19 +120,11 @@ class Server extends \Rabbit\Server\Server
         App::warning(sprintf("The fd=%d is closed by %s!", $fd, $closer));
     }
 
-    /**
-     * @return \Swoole\Server
-     */
     protected function createServer(): \Swoole\Server
     {
         return new \Swoole\WebSocket\Server($this->host, $this->port, $this->type);
     }
 
-    /**
-     * @param \Swoole\Server|null $server
-     * @throws DependencyException
-     * @throws NotFoundException
-     */
     protected function startServer(\Swoole\Server $server = null): void
     {
         parent::startServer($server);
@@ -190,9 +140,6 @@ class Server extends \Rabbit\Server\Server
         $server->start();
     }
 
-    /**
-     * @param \Swoole\Http\Request $request
-     */
     private function saveFd(\Swoole\Http\Request $request): void
     {
         $this->requestList[$request->fd] = $request;
@@ -203,9 +150,6 @@ class Server extends \Rabbit\Server\Server
         $this->table->set((string)$request->fd, ['path' => $path]);
     }
 
-    /**
-     * @param int $fd
-     */
     public function clearFd(int $fd): void
     {
         unset($this->requestList[$fd]);

@@ -10,72 +10,32 @@ use Rabbit\Web\AttributeEnum;
 use Rabbit\Web\MessageTrait;
 use Rabbit\Web\Uri;
 
-/**
- * Class Request
- * @package Rabbit\WsServer
- */
 class Request implements ServerRequestInterface
 {
     use MessageTrait;
 
-    /**
-     * @var \Swoole\Http\Request
-     */
     protected ?\Swoole\Http\Request $swooleRequest = null;
 
-    /**
-     * @var array
-     */
     private array $attributes = [];
 
-    /**
-     * @var array
-     */
     private array $cookieParams = [];
 
-    /**
-     * @var null|array|object
-     */
     private ?array $parsedBody = null;
 
     private ?array $bodyParams = null;
 
-    /**
-     * @var array
-     */
     private array $queryParams = [];
 
-    /**
-     * @var array
-     */
     private array $serverParams = [];
 
-    /**
-     * @var array
-     */
     private array $uploadedFiles = [];
 
-    /**
-     * @var string
-     */
     private string $method = 'GET';
 
-    /**
-     * @var UriInterface
-     */
     private UriInterface $uri;
 
-    /**
-     * @var string
-     */
     private ?string $requestTarget = null;
 
-    /**
-     * Request constructor.
-     * @param array $data
-     * @param int $fd
-     * @param \Swoole\Http\Request|null $swooleRequest
-     */
     public function __construct(array $data, int $fd, \Swoole\Http\Request $swooleRequest = null)
     {
         $query = ArrayHelper::getValue($data, 'query', []);
@@ -103,11 +63,6 @@ class Request implements ServerRequestInterface
         $this->uri->withPath(ArrayHelper::getValue($data, 'cmd'));
     }
 
-    /**
-     * @param string $name
-     * @param mixed $value
-     * @return Request|static
-     */
     public function withAttribute($name, $value)
     {
         $clone = $this;
@@ -115,10 +70,6 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @param array|null|object $data
-     * @return Request|static
-     */
     public function withParsedBody($data)
     {
         $clone = $this;
@@ -126,10 +77,6 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @param array $query
-     * @return Request|static
-     */
     public function withQueryParams(array $query)
     {
         $clone = $this;
@@ -137,10 +84,6 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @param array $headers
-     * @return $this
-     */
     private function setHeaders(array $headers): Request
     {
         $this->headers = [];
@@ -156,10 +99,6 @@ class Request implements ServerRequestInterface
         return $this;
     }
 
-    /**
-     * @param \Swoole\Http\Request $swooleRequest
-     * @return Uri
-     */
     private static function getUriFromGlobals(\Swoole\Http\Request $swooleRequest): Uri
     {
         $server = $swooleRequest->server;
@@ -215,10 +154,6 @@ class Request implements ServerRequestInterface
         return $uri;
     }
 
-    /**
-     * @param array $serverParams
-     * @return Request
-     */
     public function withServerParams(array $serverParams): Request
     {
         $clone = $this;
@@ -226,10 +161,6 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @param array $cookies
-     * @return Request|static
-     */
     public function withCookieParams(array $cookies)
     {
         $clone = $this;
@@ -237,42 +168,26 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @return array
-     */
     public function getServerParams()
     {
         return $this->serverParams;
     }
 
-    /**
-     * @return array
-     */
     public function getCookieParams()
     {
         return $this->cookieParams;
     }
 
-    /**
-     * @return array
-     */
     public function getQueryParams()
     {
         return $this->queryParams;
     }
 
-    /**
-     * @return array
-     */
     public function getUploadedFiles()
     {
         return $this->uploadedFiles;
     }
 
-    /**
-     * @param array $uploadedFiles
-     * @return Request|static
-     */
     public function withUploadedFiles(array $uploadedFiles)
     {
         $clone = $this;
@@ -280,26 +195,16 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @return array|null|object
-     */
     public function getParsedBody()
     {
         return $this->parsedBody;
     }
 
-    /**
-     * @return mixed
-     */
     public function getBodyParams()
     {
         return $this->bodyParams;
     }
 
-    /**
-     * @param $data
-     * @return Request
-     */
     public function withBodyParams($data): self
     {
         $clone = $this;
@@ -307,28 +212,16 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @return array
-     */
     public function getAttributes()
     {
         return $this->attributes;
     }
 
-    /**
-     * @param string $name
-     * @param null $default
-     * @return mixed|null
-     */
     public function getAttribute($name, $default = null)
     {
         return array_key_exists($name, $this->attributes) ? $this->attributes[$name] : $default;
     }
 
-    /**
-     * @param string $name
-     * @return $this|Request|static
-     */
     public function withoutAttribute($name)
     {
         if (false === array_key_exists($name, $this->attributes)) {
@@ -341,9 +234,6 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @return string
-     */
     public function getRequestTarget()
     {
         if ($this->requestTarget !== null) {
@@ -361,10 +251,6 @@ class Request implements ServerRequestInterface
         return $target;
     }
 
-    /**
-     * @param mixed $requestTarget
-     * @return Request|static
-     */
     public function withRequestTarget($requestTarget)
     {
         if (preg_match('#\s#', $requestTarget)) {
@@ -376,18 +262,11 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @return string
-     */
     public function getMethod()
     {
         return $this->method;
     }
 
-    /**
-     * @param string $method
-     * @return Request|static
-     */
     public function withMethod($method)
     {
         $method = strtoupper($method);
@@ -400,19 +279,11 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     * @return UriInterface|Request|Uri
-     */
     public function getUri()
     {
         return $this->uri;
     }
 
-    /**
-     * @param UriInterface $uri
-     * @param bool $preserveHost
-     * @return $this|Request|static
-     */
     public function withUri(UriInterface $uri, $preserveHost = false)
     {
         if ($uri === $this->uri) {
@@ -429,9 +300,6 @@ class Request implements ServerRequestInterface
         return $clone;
     }
 
-    /**
-     *
-     */
     private function updateHostFromUri(): void
     {
         $host = $this->uri->getHost();
@@ -453,18 +321,11 @@ class Request implements ServerRequestInterface
         $this->headers = [$header => [$host]] + $this->headers;
     }
 
-    /**
-     * @return \Swoole\Http\Request
-     */
     public function getSwooleRequest(): \Swoole\Http\Request
     {
         return $this->swooleRequest;
     }
 
-    /**
-     * @param \Swoole\Http\Request $swooleRequest
-     * @return $this
-     */
     public function setSwooleRequest(\Swoole\Http\Request $swooleRequest): Request
     {
         $this->swooleRequest = $swooleRequest;

@@ -5,11 +5,6 @@ namespace Rabbit\WsServer;
 
 trait HandShakeTrait
 {
-    /**
-     * @param \Swoole\Http\Request $request
-     * @param \Swoole\Http\Response $response
-     * @return bool
-     */
     public function handShake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         if ($this->checkHandshake($request, $response)) {
@@ -18,11 +13,6 @@ trait HandShakeTrait
         return false;
     }
 
-    /**
-     * @param \Swoole\Http\Request $request
-     * @param \Swoole\Http\Response $response
-     * @return bool
-     */
     public function okHandshake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool
     {
         // websocket握手连接算法验证

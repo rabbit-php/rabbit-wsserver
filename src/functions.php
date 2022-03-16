@@ -2,9 +2,6 @@
 declare(strict_types=1);
 
 if (!function_exists('getClientList')) {
-    /**
-     * @return array
-     */
     function getClientList(): array
     {
         $server = \Rabbit\Server\ServerHelper::getServer()->getSwooleServer();

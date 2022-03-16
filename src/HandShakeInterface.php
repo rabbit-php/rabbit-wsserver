@@ -3,10 +3,6 @@ declare(strict_types=1);
 
 namespace Rabbit\WsServer;
 
-/**
- * Interface HandShakeInterface
- * @package Rabbit\WsServer
- */
 interface HandShakeInterface
 {
     public function checkHandshake(\Swoole\Http\Request $request, \Swoole\Http\Response $response): bool;

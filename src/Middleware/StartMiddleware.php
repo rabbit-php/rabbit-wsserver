@@ -11,17 +11,8 @@ use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Web\AttributeEnum;
 
-/**
- * Class StartMiddleware
- * @package Rabbit\WsServer\Middleware
- */
 class StartMiddleware implements MiddlewareInterface
 {
-    /**
-     * @param ServerRequestInterface $request
-     * @param RequestHandlerInterface $handler
-     * @return ResponseInterface
-     */
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $response = $handler->handle($request);
