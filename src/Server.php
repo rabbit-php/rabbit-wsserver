@@ -6,7 +6,6 @@ namespace Rabbit\WsServer;
 
 use Rabbit\Base\App;
 use Rabbit\Base\Contract\InitInterface;
-use Rabbit\Base\Helper\ArrayHelper;
 use Rabbit\Base\Helper\FileHelper;
 use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Table\Table;
@@ -34,7 +33,9 @@ class Server extends ServerServer implements InitInterface
     {
         parent::__construct($setting, $coSetting);
         $this->table = new Table('websocket', 8192);
+        $this->table->column('fd', Table::TYPE_INT, Table::EIGHT_INT_LENGTH);
         $this->table->column('path', Table::TYPE_STRING, 100);
+        $this->table->column('query', Table::TYPE_STRING, 100);
         $this->table->create();
     }
 
@@ -99,13 +100,15 @@ class Server extends ServerServer implements InitInterface
             $this->clearFd($frame->fd);
             $this->closeHandler->handle($server, $frame);
         } else {
+            $psrResponse = new WsServerResponse($server, $frame->fd);
             try {
                 $param = JsonHelper::decode($frame->data, true);
-                $request = ArrayHelper::getValue($this->requestList, (string)$frame->fd);
+                $request = $this->requestList[$frame->fd] ?? null;
+                parse_str($request?->server['query_string'], $query);
                 $data = [
                     'server' => $request?->server,
                     'header' => $request?->header,
-                    'query' => $param['query'] ?? [],
+                    'query' => $param['query'] ?? $query,
                     'body' => $param['body'] ?? [],
                     'content' => $request?->rawContent(),
                     'cookie' => $request?->cookie,
@@ -113,9 +116,8 @@ class Server extends ServerServer implements InitInterface
                     'fd' => $frame->fd,
                     'request' => $request,
                 ];
-                $data['server']['request_uri'] = $param['cmd'] ?? '';
+                $data['server']['request_uri'] = $param['cmd'] ?? $data['server']['request_uri'];
                 $psrRequest = new Request($data);
-                $psrResponse = new WsServerResponse($server, $frame->fd);
                 RequestContext::set($psrRequest);
                 ResponseContext::set($psrResponse);
                 $this->dispatcher->dispatch($psrRequest)->send();
@@ -184,11 +186,9 @@ class Server extends ServerServer implements InitInterface
     private function saveFd(\Swoole\Http\Request $request): void
     {
         $this->requestList[$request->fd] = $request;
-        $path = '';
-        if (isset($request->server['request_uri'])) {
-            [$path] = explode('?', $request->server['request_uri']);
-        }
-        $this->table->set((string)$request->fd, ['path' => $path]);
+        $path = $request->server['request_uri'] ?? $request->server['path_info'] ?? '';
+        $query = $request->server['query_string'] ?? '';
+        $this->table->set((string)$request->fd, ['fd' => $request->fd, 'path' => $path, 'query' => $query]);
     }
 
     public function clearFd(int $fd): void
