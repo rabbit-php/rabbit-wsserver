@@ -171,7 +171,7 @@ class Server extends ServerServer implements InitInterface
     protected function startServer(\Swoole\Server $server = null): void
     {
         parent::startServer($server);
-        if (isset($this->setting['open_http_protocol']) && $this->setting['open_http_protocol']) {
+        if ($this->setting['open_http_protocol'] ?? false) {
             $server->on('request', [$this, 'onRequest']);
         }
         $server->on('message', [$this, 'onMessage']);
