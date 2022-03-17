@@ -113,6 +113,7 @@ class Server extends ServerServer implements InitInterface
                     'fd' => $frame->fd,
                     'request' => $request,
                 ];
+                $data['server']['request_uri'] = $param['cmd'] ?? '';
                 $psrRequest = new Request($data);
                 $psrResponse = new WsServerResponse($server, $frame->fd);
                 RequestContext::set($psrRequest);
