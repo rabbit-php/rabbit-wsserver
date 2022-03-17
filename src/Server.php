@@ -5,20 +5,27 @@ declare(strict_types=1);
 namespace Rabbit\WsServer;
 
 use Rabbit\Base\App;
+use Rabbit\Base\Contract\InitInterface;
 use Rabbit\Base\Helper\ArrayHelper;
+use Rabbit\Base\Helper\FileHelper;
 use Rabbit\Base\Helper\JsonHelper;
 use Rabbit\Base\Table\Table;
+use Rabbit\HttpServer\Middleware\ReqHandlerMiddleware;
 use Rabbit\HttpServer\Request;
 use Rabbit\HttpServer\Response;
+use Rabbit\Server\ServerDispatcher;
 use Rabbit\Web\RequestContext;
+use Rabbit\Web\RequestHandler;
 use Rabbit\Web\ResponseContext;
 use Rabbit\WsServer\Request as WsServerRequest;
 use Rabbit\WsServer\Response as WsServerResponse;
 use Swoole\Websocket\Frame;
 use Throwable;
 
-class Server extends \Rabbit\Server\Server
+class Server extends \Rabbit\Server\Server implements InitInterface
 {
+    private array $middlewares = [];
+
     protected ?HandShakeInterface $handShake = null;
     protected array $requestList = [];
     protected string|CloseHandler $closeHandler = CloseHandler::class;
@@ -30,6 +37,23 @@ class Server extends \Rabbit\Server\Server
         $this->table = new Table('websocket', 8192);
         $this->table->column('path', Table::TYPE_STRING, 100);
         $this->table->create();
+    }
+
+    public function init(): void
+    {
+        if (!$this->dispatcher) {
+            $this->dispatcher = create(ServerDispatcher::class, [
+                'requestHandler' => create(RequestHandler::class, [
+                    'middlewares' => $this->middlewares ? array_values($this->middlewares) : [
+                        create(ReqHandlerMiddleware::class)
+                    ]
+                ])
+            ]);
+        }
+        if (!is_dir(dirname($this->setting['log_file']))) {
+            FileHelper::createDirectory(dirname($this->setting['log_file']));
+        }
+        unset($this->middlewares);
     }
 
     /**
@@ -68,9 +92,6 @@ class Server extends \Rabbit\Server\Server
             $this->clearFd($frame->fd);
             $this->closeHandler->handle($server, $frame);
         } else {
-            $psrRequest = $this->wsRequest;
-            $psrResponse = $this->wsResponse;
-
             try {
                 $data = JsonHelper::decode($frame->data, true);
                 $psrRequest = new WsServerRequest($data, $frame->fd, ArrayHelper::getValue($this->requestList, (string)$frame->fd));

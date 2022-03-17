@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Rabbit\WsServer;
@@ -38,8 +39,8 @@ class Request implements ServerRequestInterface
 
     public function __construct(array $data, int $fd, \Swoole\Http\Request $swooleRequest = null)
     {
-        $query = ArrayHelper::getValue($data, 'query', []);
-        $body = ArrayHelper::getValue($data, 'body', []);
+        $query = $data['query'] ?? [];
+        $body = $data['body'] ?? [];
         $this->withQueryParams($query)
             ->withParsedBody($body)
             ->withAttribute(AttributeEnum::CONNECT_FD, $fd);
@@ -60,7 +61,7 @@ class Request implements ServerRequestInterface
         } else {
             $this->uri = new Uri();
         }
-        $this->uri->withPath(ArrayHelper::getValue($data, 'cmd'));
+        $this->uri->withPath($data['cmd'] ?? '/');
     }
 
     public function withAttribute($name, $value)
