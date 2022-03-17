@@ -13,19 +13,18 @@ use Rabbit\Base\Table\Table;
 use Rabbit\HttpServer\Middleware\ReqHandlerMiddleware;
 use Rabbit\HttpServer\Request;
 use Rabbit\HttpServer\Response;
+use Rabbit\Server\Server as ServerServer;
 use Rabbit\Server\ServerDispatcher;
 use Rabbit\Web\RequestContext;
 use Rabbit\Web\RequestHandler;
 use Rabbit\Web\ResponseContext;
-use Rabbit\WsServer\Request as WsServerRequest;
 use Rabbit\WsServer\Response as WsServerResponse;
 use Swoole\Websocket\Frame;
 use Throwable;
 
-class Server extends \Rabbit\Server\Server implements InitInterface
+class Server extends ServerServer implements InitInterface
 {
-    private array $middlewares = [];
-
+    protected array $middlewares = [];
     protected ?HandShakeInterface $handShake = null;
     protected array $requestList = [];
     protected string|CloseHandler $closeHandler = CloseHandler::class;
@@ -56,9 +55,6 @@ class Server extends \Rabbit\Server\Server implements InitInterface
         unset($this->middlewares);
     }
 
-    /**
-     * @return Table
-     */
     public function getTable(): Table
     {
         return $this->table;
@@ -67,7 +63,18 @@ class Server extends \Rabbit\Server\Server implements InitInterface
     public function onRequest(\Swoole\Http\Request $request, \Swoole\Http\Response $response): void
     {
         try {
-            $psrRequest = new Request($request);
+            $data = [
+                'server' => $request->server,
+                'header' => $request->header,
+                'query' => $request->get,
+                'body' => $request->post,
+                'content' => $request->rawContent(),
+                'cookie' => $request->cookie,
+                'files' => $request->files,
+                'fd' => $request->fd,
+                'request' => $request,
+            ];
+            $psrRequest = new Request($data);
             $psrResponse = new Response();
             RequestContext::set($psrRequest);
             ResponseContext::set($psrResponse);
@@ -93,8 +100,20 @@ class Server extends \Rabbit\Server\Server implements InitInterface
             $this->closeHandler->handle($server, $frame);
         } else {
             try {
-                $data = JsonHelper::decode($frame->data, true);
-                $psrRequest = new WsServerRequest($data, $frame->fd, ArrayHelper::getValue($this->requestList, (string)$frame->fd));
+                $param = JsonHelper::decode($frame->data, true);
+                $request = ArrayHelper::getValue($this->requestList, (string)$frame->fd);
+                $data = [
+                    'server' => $request?->server,
+                    'header' => $request?->header,
+                    'query' => $param['query'] ?? [],
+                    'body' => $param['body'] ?? [],
+                    'content' => $request?->rawContent(),
+                    'cookie' => $request?->cookie,
+                    'files' => $request?->files,
+                    'fd' => $frame->fd,
+                    'request' => $request,
+                ];
+                $psrRequest = new Request($data);
                 $psrResponse = new WsServerResponse($server, $frame->fd);
                 RequestContext::set($psrRequest);
                 ResponseContext::set($psrResponse);
