@@ -8,7 +8,6 @@ use Rabbit\Base\App;
 use Rabbit\Base\Contract\InitInterface;
 use Rabbit\Base\Helper\FileHelper;
 use Rabbit\Base\Helper\JsonHelper;
-use Rabbit\Base\Table\Table;
 use Rabbit\HttpServer\Middleware\ReqHandlerMiddleware;
 use Rabbit\HttpServer\Request;
 use Rabbit\HttpServer\Response;
@@ -18,6 +17,7 @@ use Rabbit\Web\RequestContext;
 use Rabbit\Web\RequestHandler;
 use Rabbit\Web\ResponseContext;
 use Rabbit\WsServer\Response as WsServerResponse;
+use Swoole\Table;
 use Swoole\Websocket\Frame;
 use Throwable;
 
@@ -32,8 +32,8 @@ class Server extends ServerServer implements InitInterface
     public function __construct(array $setting = [], array $coSetting = [])
     {
         parent::__construct($setting, $coSetting);
-        $this->table = new Table('websocket', 8192);
-        $this->table->column('fd', Table::TYPE_INT, Table::EIGHT_INT_LENGTH);
+        $this->table = new Table(8192);
+        $this->table->column('fd', Table::TYPE_INT, 8);
         $this->table->column('path', Table::TYPE_STRING, 100);
         $this->table->column('query', Table::TYPE_STRING, 100);
         $this->table->create();
